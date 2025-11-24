@@ -1,0 +1,473 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PiperDB</title>
+<meta name="keywords" content="CRISPR, editing, RNA, gRNA, cas9" />
+<meta name="description" content="Crispr editing database" />
+<link href="style.css" rel="stylesheet" type="text/css" />
+
+<script language="javascript" type="text/javascript">
+function clearText(field)
+{
+    if (field.defaultValue == field.value) field.value = '';
+    else if (field.value == '') field.value = field.defaultValue;
+}
+</script>
+
+<link rel="stylesheet" href="css/nivo-slider.css" type="text/css" media="screen" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script src="script/jquery.nivo.slider.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+$(window).load(function() {
+        $('#slider').nivoSlider({
+                effect:'random',
+                slices:15,
+                animSpeed:500,
+                pauseTime:2000,
+                startSlide:0, // Set starting Slide (0 index)
+                directionNav: false, // Next and Prev
+                directionNavHide:false, // Only show on hover
+                controlNav:false, // 1,2,3...
+                controlNavThumbs:false, //Use thumbnails for Control Nav
+                pauseOnHover:true, //Stop animation while hovering
+                manualAdvance:false, //Force manual transitions
+                captionOpacity:0.8, //Universal caption opacity
+                beforeChange: function(){},
+                afterChange: function(){},
+                slideshowEnd: function(){} //Triggers after all slides have been shown
+        });
+});
+</script>
+
+</head>
+<body>
+
+
+<div id="header_wrapper">	
+    <div id="header">
+        <div id="site_title">
+            <h1><a href="" target="_parent">PiperDB</a></h1> </div>
+<div id="menu">
+            <ul>
+                <li><a href="index.php" class="current"><span class="home"></span>Home</a></li>
+                <li><a href="browse.php"><span class="portfolio"></span>Browse</a></li>
+                <li><a href="search.php"><span class="projects"></span>Search</a></li>
+		<li><a href="tools.php"><span class="projects"></span>Tools</a></li>
+                <li><a href="help.php"><span class="gallery"></span>Help</a></li>
+                <li><a href="Contact.php"><span class="gallery"></span>Contact</a></li>
+            </ul>
+        </div>
+</div> 
+</div>
+
+
+
+<?php 
+include "user_connection.php";
+echo '<link rel="stylesheet" type="text/css" href="balloontip.css" />
+<script type="text/javascript" src="balloontip.js"></script>
+';
+?>
+<?php
+ini_set( "display_errors", 0);
+include"connection.php";
+$not_ok=file("NOT_ok_113.txt");
+$warning=file("Warning_101.txt");
+                echo "";
+$font='<font size=3px>';
+if($_GET['how']=='up'){$how='down';}else{$how='up';}
+
+
+function se_all($table,$type,$key){
+	$awhe = "";
+	$sql = "select * from $table";
+	$res = mysql_query($sql);
+	if($type == 'exact'){
+		for($i=0;$i<mysql_num_fields($res);$i++){
+			$f_name = mysql_field_name($res,$i);
+			$awhe = $awhe."`$f_name`"."='$key'"." or ";
+		}
+	$awhe_final = preg_replace("/ or $/","",$awhe);
+	}
+        else if($type == 'similar'){
+		for($i=0;$i<mysql_num_fields($res);$i++){
+			$f_name = mysql_field_name($res,$i);
+			$awhe = $awhe."`$f_name`"." like '%$key%' "." or ";
+		}
+		$awhe_final = preg_replace("/ or $/","",$awhe);
+	}
+       $cat_sql=$awhe_final.'order by `PiperID`+0 asc';
+     return 	$cat_sql;
+}
+function se_selected($search,$type,$key){
+	$awhe = "";
+	if($type == 'exact'){
+		foreach($search as $f_name){
+if(preg_match('/level/',$f_name)){
+if($key >50 && $key<=70){$awhe = $awhe."`".$f_name."`>$key or $f_name='Medium' or";}
+if($key>70){$awhe = $awhe."`".$f_name."`>$key or $f_name='High' or";}
+if($key <50){$awhe = $awhe."`".$f_name."`< $key or $f_name='Low' or";}
+
+$awhe = $awhe."`".$f_name."`>$key or ";}else{		
+	$awhe = $awhe."`".$f_name."`='$key'"." or ";}
+		$awhe_final = preg_replace("/ or $/","",$awhe);}
+echo $fname;
+	}
+	else if($type == 'similar'){
+		foreach($search as $f_name){
+                         if($f_name=="Inhibition"){$awhe = $awhe."`".$f_name."`> $key or ";}
+			$awhe = $awhe."`$f_name`"." like '%$key%' "." or ";
+			}
+		$awhe_final = preg_replace("/ or $/","",$awhe);
+	}
+       $cat_sql=$awhe_final.'order by `PiperID`+0 asc';
+     return     $cat_sql;
+
+#	return $awhe_final;
+}
+function de_selected($display,$table){
+	$bwhe  = "";
+	foreach($display as $f_name){
+		$bwhe = $bwhe."`$f_name`".",";
+	}
+	$bwhe = preg_replace("/,$/","",$bwhe);
+	$bwhe_final = "select `$bwhe` from $table where ";
+	return $bwhe_final;
+}
+function de_all($table){
+	$bwhe_final = "select * from $table where ";
+	return $bwhe_final;
+}
+
+        $send=rand();
+        $fold=$tmp.'/'.$send;
+        $adjacents = 5;
+		$select_by=$_GET['by'];
+		$select_type=$_GET['TYPE'];
+		$searchk=trim($_POST['key']);
+		$search = $_POST['hse'];
+		$table="piperdb";
+                $type=$_POST['type'];
+		$page=1;
+                 #echo "sdsdsdf$searchk.dfsd  $search</br>";print_r($search);
+     		if($search[0] == 'all' ){
+     			$awhe = se_all($table,$type,$searchk);
+			$bwhe = de_all($table);
+			$sql = "$bwhe"."$awhe";
+		}
+                else{
+		$awhe = se_selected($search,$type,$searchk);	
+                        $bwhe = de_all($table);
+			$sql = "$bwhe"."$awhe";
+		}
+#$sql="SELECT * FROM `crsiprge` where  `name of virus` ='Influenza A Virus'";
+#$result=mysql_query($sql);
+#		  include "r1.php";
+echo '<br/><br/>';
+ $select_by=$_GET['by'];
+$bool=$_POST['bool'];
+if(empty($_POST['keyword']) && !empty($_POST['key'])){
+                $select_type=$_GET['TYPE'];
+                $searchk=trim($_POST['key']);
+                $search = $_POST['hse'];
+                $table="piperdb";
+                $type=$_POST['type'];
+
+if($search[0] == 'all' ){
+     			$awhe = se_all($table,$type,$searchk);
+			$bwhe = de_all($table);
+			$sql = "$bwhe"."$awhe";
+
+		}
+                else{
+		$awhe = se_selected($search,$type,$searchk);	
+                        $bwhe = de_all($table);
+			$sql = "$bwhe"."$awhe";
+
+		}
+
+}
+elseif(!empty($_POST['bool'])){
+$keyword=$_POST['keyword'];
+$bool=$_POST['bool'];
+//$sql="select * from `crsiprge` where `Inhibition` $bool $keyword order by `Inhibition`+0 desc";}
+if($keyword >=50 && $keyword<70 && $bool=='>'){
+$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='Medium' or `Inhibition`='High'  order by `Inhibition`+0 desc";}
+if($keyword<=71 && $keyword>51 && $bool=='<'){
+$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='Medium' or `Inhibition`='Low' order by `Inhibition`+0 desc";}
+
+
+
+
+
+if($keyword >=70 && $bool=='>'){$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='High' order by `Inhibition`+0 desc";}
+
+if(($keyword <50) && ($bool=='>')){$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='Low' or `Inhibition`='High' or `Inhibition`='Medium' order by `Inhibition`+0 desc";}
+
+if(($keyword <=51) && ($bool=='<')){$sql="select * from `crsiprge` where   `Inhibition`like 'Low' or `Inhibition` $bool $keyword AND `Inhibition` not like 'High' AND `Inhibition` not like 'Medium' order by `Inhibition`+0 desc";}
+
+
+#if( $keyword<=70 && $bool=='<'){
+#$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='Medium' or `Inhibition`='Low'  order by `Inhibition`+0 desc";}
+
+if($keyword >71 && $bool=='<'){$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='High' or `Inhibition`='Medium' or `Inhibition`='Low' order by `Inhibition`+0 desc";}
+
+//if(($keyword <50) && ($bool=='>')){$sql="select * from `crsiprge` where `Inhibition` $bool $keyword or `Inhibition`='Low' or `Inhibition`='High' or `Inhibition`='Medium' order by `Inhibition`+0 desc";}
+
+if(($bool=='=')){$sql="select * from `crsiprge` where `Inhibition` $bool $keyword   order by `Inhibition`+0 desc";}
+
+}
+//echo $sql;
+#$sql="SELECT * FROM `crsiprge` where  `name of virus` ='Influenza A Virus'";
+#echo $sql;
+
+
+######## Download Data Coding START ######
+$sqx = "$bwhe"."$awhe";
+$ran_no = mt_rand(500, 100000000);
+$down_fi_name = "../../tmp/servers/crsiprge/data-$ran_no.csv";
+$fh = fopen("$down_fi_name",'w');
+$down_res = mysql_query($sqx) or die(mysql_error());
+$down_f_no = mysql_num_fields($down_res);
+for($k=0;$k<$down_f_no;$k++){
+$down_f_name = mysql_field_name($down_res, $k);
+fwrite($fh,"\"$down_f_name\"\t");
+}
+fwrite($fh,"\n");
+while($row=mysql_fetch_array($down_res)){
+for($k=0;$k<$down_f_no;$k++){
+$down_f_name = mysql_field_name($down_res, $k);
+$down_f_val = $row[$down_f_name];
+fwrite($fh,"\"$down_f_val\"\t");
+}
+fwrite($fh,"\n");
+}
+#fclose($down_res);
+
+
+print"<span align='right' style='background: #DDE026; text-color: white; height: 22px'>";
+echo"<form action='download_data.php' method=post>";
+echo"<input type=hidden name=id value='$down_fi_name'>";
+echo"<input type=submit name=DOWNLOAD value='Download data as CSV'>";
+echo"</form>";
+print"</span>";
+######## Download Data Coding END ######
+
+
+
+
+$result=mysql_query($sql);
+		echo '<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<style type="text/css" title="currentStyle">
+			@import "css/demo_page.css";
+			@import "css/demo_table.css";
+			@import "css/media/base/jquery-ui.css";
+			@import "css/themes/smoothness/jquery-ui-1.7.2.custom.css";
+		</style>
+        <script src="css/js/jquery-1.4.4.min.js" type="text/javascript"></script>
+        <script src="css/js/jquery.dataTables.min.js" type="text/javascript"></script>
+        <script src="css/js/jquery-ui.js" type="text/javascript"></script>
+        <script src="css/js/jquery.dataTables.columnFilter.js" type="text/javascript"></script>
+        
+	<script type="text/javascript">
+        $(document).ready(function () {
+        
+ $(\'#example\').dataTable({
+ 
+"aaSorting": [[ 10, "desc" ]]
+      
+        
+        
+        
+    } );
+                $(\'#example\').dataTable().columnFilter({ sPlaceHolder: "head:after",
+                                                             aoColumns: [
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text", bRegex:true  },
+                                                                         { type: "text" },
+                                                                         { type: "text" },
+                                                                         { type: "text" }
+                                                                         ]
+                });
+            });
+	</script>
+        <script type="text/javascript">
+	</script>
+
+                <table id="example" class="display" style="width: 1400px" >
+                    <thead style="background-color: #0fa7ba">
+                        <tr>
+                            <th>PiperID</th>
+                           <th>Sequence</th>
+  <th>Ion</th>
+                            <th>Score</th>
+
+                          <th>Hits</th>
+<th>Mass</th>
+
+                            <th>Modification</th>
+                            <th>Protein Name</th>
+                            <th width=110px>Origin</th>
+<th width=110px>Accession</th>   
+                           
+                        </tr>
+                        <tr> <<th>PiperID</th>
+                           <th>Sequence</th>
+  <th>Ion</th>
+                            <th>Score</th>
+
+                          <th>Hitse</th>
+<th>Mass</th>
+
+                            <th>Modification</th>
+                            <th>Protein Name</th>
+                            <th width=110px>Origin</th>
+<th width=110px>Accession</th>   
+                        
+                        </tr>
+                    </thead>
+
+                    <tbody>';
+
+
+
+
+
+
+
+while($row = mysql_fetch_array($result)){
+  $HUMAN="";
+  $row[1]=preg_replace("/T/","T",$row[1]);
+ $check_off= file("offtarget/$row[0].html");
+ foreach ($check_off as $c_off){if(preg_match('/significant/',$c_off)){
+     $HUMAN="<a href=\"offtarget/$row[0].html\"rel=".$row[0]."off>Blast</a>";
+}
+}
+$refsub="siRNA sequence \"<a href>$row[1]</a>\" alignment with \"<a href>$row[5]</a>\" virus reference Genome sequences";
+
+$pubmed_res=file('pubmed.txt');
+ $var4=$row[0];
+foreach ($pubmed_res as $publine){
+  trim($publine);
+  unset($file_ex1[1]);unset($fruits[1]);unset($fruits[1]);unset($fruits[1]);
+$file_ex1=explode("\t",$publine);
+if($row[20]==$file_ex1[0]){
+$var1="Pubmed:<a href>$row[20]</a> <br/>Article:<a href=''>$file_ex1[1]</a><br/>Authors:<a>$file_ex1[2]</a><br/>Journal:<a>$file_ex1[3]</a><br/>Entrez:<a>$file_ex1[5]</a><br/>";}
+}
+if(!empty($row[4])){$addgc="<br/>GC Content:<a>$row[4] %</a>";}else{$addgc='';}
+if(!empty($row[17])){$addtr="Transfection Reagent:<a>$row[17] </a>";}else{$addtr='';}
+if(!empty($row[18])){$addih="<br/>Incubation Time (Hours):<a>$row[18] </a>";}else{$addih='';}
+
+
+
+if(!empty($row[12])){$addacc="<br/>GenBank Acc: <a>$row[12] </a>";}else{$addacc='';}
+if(!empty($row[3])){$addlen="<br/>Length: <a>$row[3] </a>";}else{$addlen='';}
+if(!empty($row[7])){$addstrain="<br/>Strain of Virus: <a>$row[7] </a>";}else{$addstrain='';}
+if(!empty($row[10])){$addsp="<br/>Starting position: <a>$row[10] </a>";}else{$addsp='';}
+if(!empty($row[17])){$addta="<br/>Transfection Reagent: <a>$row[17] </a>";}else{$addta='';}
+
+if(in_array("$row[0]\n",$not_ok)){$sss_color="red1.jpeg";}
+elseif(in_array("$row[0]\n",$warning)){$sss_color="blue1.jpeg";}
+else{$sss_color="green1.jpeg";}
+
+$browse_record="Browse \"<a href>$row[0] </a>\" record $addlen $addgc $addsp $addstrain $addacc $addta $addih<br/>";
+
+ $browse_acc="See <a href>$row[12]</a> at Genbank";
+ $browse_vir="Browse all the records for \"<a href>$row[5]</a>\" virus";
+ $offtar="Offtargets for \"<a href>$row[1]</a>\" siRNA in  Human  Genome sequences";
+ if(preg_match("/<a/",$HUMAN)){$HUMAN=$HUMAN;}else{$HUMAN='<font color="#A9E2F3"> Blast</font>';}
+if(preg_match("/<a/",$HUMAN)){$HUMAN=$HUMAN;}else{$HUMAN='<font color="#A9E2F3">Blast</font>';}
+
+
+
+
+
+
+
+echo "<tr ><td>$font<a href=\"record.php?details=".$row[0]."\"rel=".$row[0]."0>".$row[0]."</a></td>
+
+<td WIDTH='50px';><font size=2>".$row[1]."</font></td>
+
+<td WIDTH='600px';>$row[2]</a></td>
+
+<td>".$row[3]."</td>
+<td><center>".$row[4]."</center></td>
+<td><center>".$row[5]."</center></td>
+<td><center>".$row[6]."</center></td>
+<td><center>".$row[7]."</center></td>
+<td><center>".$row[8]."</center></td><td><center>".$row[9]."</center></td>
+<td><center>$row[10]</center></td>";
+
+if (preg_match("/US/", "$row[23]")) {
+
+echo"<td><center><a href=\"http://www.patentlens.net/patentlens/patents.html?patnums=".$row[20]."\" rel=".$row[0].">".$row[23]."</center></a></td>";}
+
+else {echo"<td><center><a href=\"http://www.ncbi.nlm.nih.gov/pubmed/".$row[23]."\" rel=".$row[0].">".$row[23]."</center></td>";}
+
+
+echo "<td><center><a href=\"analyze.php?SEQ=$row[1]\"><img title=Physico-chemical&nbsp;properties width=15 height=20 ></a>
+<a href=\"/cgibin/servers/crsiprge/blast/blast.cgi?SEQUENCE=$row[1]&PROGRAM=blastp&ALIGNMENT_VIEW=1&EXPECT=10&ALIGNMENTS=10&COLOR_SCHEMA=1&DATALIB=crsiprge&OVERVIEW\"><img title=Blast sequence width=15 height=20 ></img></a>
+
+<a href=\"jmol.php?id=$row[0]\"><img title=Structure width=15 height=20 ></a></td></center>
+";
+
+/*echo "<div id=\"$row[0]1\" class=\"balloonstyle\" style=\"width: 300px; background-color: #D0F5A9\">$refsub</div>";
+echo "<div id=\"$row[0]fm\" class=\"balloonstyle\" style=\"width: 300px; background-color: #D0F5A9\">$family_con</div>";
+echo "<div id=\"$row[0]5\" class=\"balloonstyle\" style=\"width: 300px; background-color: #D0F5A9\">$browse_vir</div>";
+echo "<div id=\"$row[0]0\" class=\"balloonstyle\" style=\"width: 240px; background-color: #D0F5A9\">$browse_record</div>";
+echo "<div id=\"$row[0]off\" class=\"balloonstyle\" style=\"width: 260px; background-color: #D0F5A9\">$offtar</div>";
+echo "<div id=\"$row[0]acc\" class=\"balloonstyle\" style=\"width: 160px; background-color: #D0F5A9\">$browse_acc</div>";
+echo "<div id=\"$row[0]\" class=\"balloonstyle\" style=\"width: 550px; background-color: #D0F5A9\">$var1</div>"; */
+echo "</tr>";}
+echo'   </tbody>
+                    <tfoot>
+
+                        <tr>
+                        </tr>
+                    </tfoot>
+                </table>';
+
+#echo '<br/><a name="imgs">#</a> <img src="images/green1.jpeg">: siRNA specific for both strands &nbsp&nbsp<img src="images/blue1.jpeg">: siRNA specific for only one strands &nbsp&nbsp<img src="images/red1.jpeg">: siRNA Not specific &nbsp&nbsp<a href><b>SL</b><a>:siRNA seedlocator algorithm';
+#include"footjspatch.php";
+?>
+
+
+
+	<div class="col_w540 float_l v_divider">
+</div>
+<div class="cleaner h30"></div>
+            
+            <div class="cleaner"></div>
+
+
+<div id="content">
+    
+    	<div class="col_w440 float_l">
+			</div>
+            
+			<div class="cleaner"></div>  
+
+      </div>
+        <div class="cleaner"></div>   
+
+
+
+<div id="footer_wrapper">
+     <div id="footer">
+
+        Copyright © 2014 <a hrf="http://www.imtech.res.in">Institute of Microbial Technology</a> |
+        <a href="" target="_parent">CSIR</a> by <a href="" target="_parent">Team</a>
+
+    </div> <!-- end of footer -->
+
+
+</body>
+</html>
+

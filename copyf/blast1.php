@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PiperDB</title>
+<meta name="keywords" content="CRISPR, editing, RNA, gRNA, cas9" />
+<meta name="description" content="Crispr editing crsiprgebase" />
+<link href="style.css" rel="stylesheet" type="text/css" />
+
+<script language="javascript" type="text/javascript">
+function clearText(field)
+{
+    if (field.defaultValue == field.value) field.value = '';
+    else if (field.value == '') field.value = field.defaultValue;
+}
+</script>
+
+<link rel="stylesheet" href="css/nivo-slider.css" type="text/css" media="screen" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script src="script/jquery.nivo.slider.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+$(window).load(function() {
+        $('#slider').nivoSlider({
+                effect:'random',
+                slices:15,
+                animSpeed:500,
+                pauseTime:2000,
+                startSlide:0, // Set starting Slide (0 index)
+                directionNav: false, // Next and Prev
+                directionNavHide:false, // Only show on hover
+                controlNav:false, // 1,2,3...
+                controlNavThumbs:false, //Use thumbnails for Control Nav
+                pauseOnHover:true, //Stop animation while hovering
+                manualAdvance:false, //Force manual transitions
+                captionOpacity:0.8, //Universal caption opacity
+                beforeChange: function(){},
+                afterChange: function(){},
+                slideshowEnd: function(){} //Triggers after all slides have been shown
+        });
+});
+</script>
+
+</head>
+<body>
+
+
+<div id="header_wrapper">	
+    <div id="header">
+        <div id="site_title">
+            <h1><a href="" target="_parent">PiperDB</a></h1> </div>
+<div id="menu">
+            <ul>
+                <li><a href="index.php" class="current"><span class="home"></span>Home</a></li>
+                <li><a href="browse.php"><span class="portfolio"></span>Browse</a></li>
+                <li><a href="search.php"><span class="projects"></span>Search</a></li>
+		<li><a href="advance.php"><span class="projects"></span>Advanced Search</a></li>
+                <li><a href="tools.php"><span class="gallery"></span>Tools</a></li>
+                <li><a href="#"><span class="gallery"></span>Team</a></li>
+            </ul>
+        </div>
+</div> 
+</div>
+<div id="wrapper">
+<div id="middle">
+
+<script type="text/javascript">
+function getseq(t){
+document.getElementById('SEQUENCE').value = "";
+var myVal;
+myVal = document.getElementById('SEQUENCE').value;
+myVal += ''+ t;
+document.getElementById('SEQUENCE').value = myVal;
+
+}
+</script>
+
+<TITLE>BLAST Search </TITLE>
+<BODY
+    BGCOLOR="black"
+    TEXT="#000000"
+    LINK="#0000FF"
+    VLINK="#FF66FF"
+    ALINK="#FF0000"
+    >
+<FORM ACTION="blast/blast.cgi" METHOD = POST NAME="MainBlastForm" ENCTYPE= "multipart/form-data">
+<!--<B>Choose program to use and database to search:</B>
+<P>-->
+    <!--<a href="docs/blast_program.html">Program</a>-->
+       <center><h2><font size="4" color ="white"><b>PiperDB Blast</b></font></h2></center>
+        <center><font size=3 color='white'>Blast your target sequence against PiperDB</font></center>
+
+<input type="hidden" name = "PROGRAM" value="blastn">
+
+<!--<select name = "PROGRAM" value="blastn">
+    <option> blastn
+    <option> blastp
+    <option> blastx
+    <option> tblastn
+    <option> tblastx
+</select>-->
+<input type="hidden" name="DATALIB" value="crisprge">
+</body>
+<!--
+Enter here your input data as 
+<select name = "INPUT_TYPE"> 
+    <option> Sequence in FASTA format 
+    <option> Accession or GI 
+</select>
+-->
+
+<P><table><tr><td><font color="white">
+Enter your target peptide sequence below  </font>
+<BR>
+<textarea id="SEQUENCE" name="SEQUENCE" rows=6 cols=60>
+</textarea></td><td><br/><br/><br/><b><a href="#" onclick="getseq('>gene1\nGAACTCAGGAGGTTCCTGCTGG ')">Example</a></b><br/> >XYZ<br>
+KVLTTGLPALISWIKRKRQQ</td></tr></table>
+<BR><font color="white">
+Or load it from disk 
+<INPUT TYPE="file" NAME="SEQFILE">
+
+<P>
+<HR>
+<br>
+Expect
+<select name = "EXPECT">
+    <option> 0.0001 
+    <option> 0.01 
+    <option> 1 
+    <option selected> 10 
+    <option> 100 
+    <option> 1000 
+</select>
+&nbsp;&nbsp;
+
+Matrix
+<select name = "MAT_PARAM">
+    <option value = "PAM30	 9	 1"> PAM30 </option>
+    <option value = "PAM70	 10	 1"> PAM70 </option> 
+    <option value = "BLOSUM80	 10	 1"> BLOSUM80 </option>
+    <option selected value = "BLOSUM62	 11	 1"> BLOSUM62 </option>
+    <option value = "BLOSUM45	 14	 2"> BLOSUM45 </option>
+</select>
+<INPUT TYPE="checkbox" NAME="UNGAPPED_ALIGNMENT" VALUE="is_set">Perform ungapped alignment
+<P><!--
+<a href="docs/newoptions.html#gencodes">Query Genetic Codes (blastx only) 
+</a>
+
+<P>
+<P>
+<a href="docs/oof_notation.html">Frame shift penalty</a> for blastx 
+<select NAME = "OOF_ALIGN"> 
+ <option> 6
+ <option> 7
+ <option> 8
+ <option> 9
+ <option> 10
+ <option> 11
+ <option> 12
+ <option> 13
+ <option> 14
+ <option> 15
+ <option> 16
+ <option> 17
+ <option> 18
+ <option> 19
+ <option> 20
+ <option> 25   
+ <option> 30
+ <option> 50
+ <option> 1000
+ <option selected VALUE = "0"> No OOF
+</select>-->
+<P>
+Other advanced options: 
+&nbsp;&nbsp;&nbsp;&nbsp; 
+<INPUT TYPE="text" NAME="OTHER_ADVANCED" VALUE="" MAXLENGTH="50">
+<HR>
+<br>
+<INPUT TYPE="checkbox" NAME="NCBI_GI" >&nbsp;&nbsp;
+
+<INPUT TYPE="checkbox" NAME="OVERVIEW"  CHECKED> 
+
+Graphical Overview
+&nbsp;&nbsp;
+Alignment view
+<select name = "ALIGNMENT_VIEW">
+    <option value=0> Pairwise
+    <option value=1> master-slave with identities
+    <option value=2> master-slave without identities
+    <option value=3> flat master-slave with identities
+    <option value=4> flat master-slave without identities
+    <option value=7> BLAST XML
+    <option value=9> Hit Table
+</select>
+<BR>
+<br>
+Descriptions
+<select name = "DESCRIPTIONS">
+    <option> 0 
+    <option> 10 
+    <option> 50 
+    <option selected> 100 
+    <option> 250 
+    <option> 500 
+</select>
+&nbsp;&nbsp;
+Alignments
+<select name = "ALIGNMENTS">
+    <option> 0 
+    <option> 10 
+    <option selected> 50 
+    <option> 100 
+    <option> 250 
+    <option> 500 
+</select>
+Color schema
+<select name = "COLOR_SCHEMA">
+    
+    <option selected value = 1> Color schema 1  
+    <option value = 6> Color schema 2 
+    <option value = 2> Color schema 3  
+    <option value = 3> Color schema 4 
+    <option value = 4> Color schema 5 
+    <option value = 5> Color schema 6 
+   <option  value = 0> No color schema
+</select></font>
+<br><br><br>
+<center><P>
+<INPUT TYPE="button" VALUE="Clear sequence" onClick="MainBlastForm.SEQUENCE.value='';MainBlastForm.SEQFILE.value='';MainBlastForm.SEQUENCE.focus();">
+<INPUT TYPE="submit" VALUE="Search"></center>
+</FORM>
+<HR>
+
+<BR>
+</BODY>
+</HTML>
+
+<div id="middle" style="height: 60px;">
+    
+    	<div class="col_w540 float_l v_divider">
+</div>
+<div class="cleaner h30"></div>
+            
+            <div class="cleaner"></div>
+</div>
+
+<div id="content">
+    
+    	<div class="col_w440 float_l">
+			</div>
+            
+			<div class="cleaner"></div>  
+
+      </div>
+        <div class="cleaner"></div>   
+</div>
+
+</div>
+<div id="footer_wrapper">
+     <div id="footer">
+
+        Copyright © 2015 <a hrf="http://www.spices.res.in">Indian Institute of Spices Reserch</a> |
+        <a href="" target="_parent">IISR</a> <a href="" target="_parent"></a>
+    </div> <!-- end of footer -->
+
+
+</body>
+</html>

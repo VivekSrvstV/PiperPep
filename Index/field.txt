@@ -1,0 +1,12 @@
+Select field
+CrisprId 
+Organism 
+Gene/Locus
+Target
+Modification
+Location 
+Cell Line
+Method
+Crispr-Efficiency
+Gene
+PMID

@@ -1,0 +1,125 @@
+<?
+session_start();
+include'template-hiv.php';
+include'con.php';
+head();
+$start_rec = 0;
+$rec_limit = 25;
+$_1=$_POST['hiv_strain'];
+$_2=$_POST['AON1'];
+$_3=$_POST['target_site_seq'];
+$_4=$_POST['AON2'];
+$_5=$_POST['target_gene'];
+
+if(!isset($_GET['page'])){
+$query_string = "";
+if ($_POST) {
+	  foreach ($_POST as $key => $value) {
+	if($value == ''){}else{$kv[] = "$key='$value'";}
+	  }
+	  $query_string = join(" AND ", $kv);
+	if($_1!='' && $_2!='' && $_3!='' && $_4!='' && $_5!=''){
+		$query_string = preg_replace("/ AND AON1='$_2'/"," $_2",$query_string);
+		$query_string = preg_replace("/AND target_site_seq/"," target_site_seq",$query_string);
+		$query_string = preg_replace("/ AND AON2='$_4'/"," $_4",$query_string);
+		$query_string = preg_replace("/AND target_gene/"," target_gene",$query_string);
+		echo $query_string,"<br/>";}
+	elseif($_1!='' && $_3!='' && $_5==''){	
+		$query_string = preg_replace("/ AND AON1='$_2'/"," $_2",$query_string);
+		$query_string = preg_replace("/AND target_site_seq/"," target_site_seq",$query_string);
+		echo $query_string,"<br/>";
+
+
+
+	   }
+	}
+else {
+  $query_string = $_SERVER['QUERY_STRING'];
+}
+echo $query_string;
+$sql = "select * from hivsir where $query_string";
+$res = mysql_query($sql) or die(mysql_error());
+$no_res = mysql_num_rows($res);
+#print $sql;
+#print $no_res;
+$_SESSION['skl'] = "$sql";///////////////////////// Pagination..............Coding.....!!!!!!!
+$_SESSION['start'] = 1;
+$_SESSION['rec_limit'] = $rec_limit;
+$total_page = $no_res/$rec_limit;
+if(preg_match("/\.\d+/",$total_page)){
+$total_page = preg_replace("/\.\d+/","",$total_page);
+$total_page = $total_page+1;
+#print $total_page."<br>";
+}
+$_SESSION['total_page'] = $total_page;
+//print "$sql&nbsp;&nbsp;$rec_limit&nbsp;&nbsp;$no_res";
+if($total_page > 1){
+print"<a href='adsearch.php?page=1'>Next&nbsp;&nbsp;&nbsp;</a>";
+}
+}////////////////////////////////////////// Before Pagination ////////////////////////////////
+else if(isset($_GET['page'])){
+$sql = $_SESSION['skl'];
+$total_page = $_SESSION['total_page'];
+$rec_limit = $_SESSION['rec_limit'];
+$page_no = $_GET['page'];
+if(($page_no == 0) || !(isset($_GET['page']))){
+$start_rec = $page_no*$rec_limit;
+}
+else{
+$start_rec = $rec_limit*$page_no;
+}
+$pre_page = $page_no-1;
+$page_no = $page_no+1;
+if($page_no > 1){
+print"<a href='adsearch.php?page=0'><b>Start</b></a>&nbsp;&nbsp;&nbsp;";
+}
+if($page_no > 1){
+print"<a href='adsearch.php?page=$pre_page'><b>Previous</b></a>&nbsp;&nbsp;&nbsp;";
+}
+if($page_no < $total_page){
+print"<a href='adsearch.php?page=$page_no'><b>Next</b></a>&nbsp;&nbsp;&nbsp;";
+}
+//print $sql."<br>$total_page<br>$rec_limit";
+}
+if($page_no < $total_page && $total_page > 1){
+$last = $total_page-1;
+print"<a href='adsearch.php?page=$last'><b>Last</b></a>";
+}
+#print $res;
+$res = mysql_query($sql) or die(mysql_error());
+$no_res = mysql_num_rows($res);
+$total_res = mysql_query($sql) or die(mysql_error());
+$total_records = mysql_num_rows($total_res);
+$sql = $sql." limit $start_rec,$rec_limit";
+$res = mysql_query($sql) or die(mysql_error());
+$no_res = mysql_num_rows($res);
+
+if($no_res == 0){
+print"<br><br><br><center><font color='brown' size='4'><b>No Record Found in our database</b></font>";
+print"<br><input type='button' onClick='history.go(-1)' value='Go Back'></center>";
+}
+
+else{
+if(!isset($_GET['page'])){
+$page_no = 1;
+}
+print"<center><b>Page - $page_no of $total_page</b></center><br>";
+$headers = array('id' => 'HIVsir ID','hiv_strain' => 'HIV Strain','ncbi_ac' => 'NCBI Accession','target_gene' => 'Target Gene','pos_sirna_target' => 'Position of siRNA target','target_site_seq' => 'Target Site Sequence','len_sirna' => 'Length of siRNA','efficacy' => 'Efficacy (%)','gc_content' => 'GC Content (%)','cell_type' => 'Cell type','sirna_source' => 'siRNA Source','transfec_reagent' => 'Transfection Reagent','test_objec' => 'Test Objective','test_method' => 'Test method','test_time' => 'Test Time','pubmed' => 'PubMed');
+$rec = $start_rec+1;
+while($row = mysql_fetch_array($res)){
+#print"<center>Page - $page_no of $total_page</center>";
+print"<center><b>Record - $rec of $total_records</b></center><br>";
+print"<table align='center' border='3' width='100%' bordercolor='gray'>";
+$f_no = mysql_num_fields($res);
+#print $f_no."<br>";
+for($j=0;$j<$f_no;$j++){
+$f_name = mysql_field_name($res, $j);
+$r = $row[$f_name];
+print "<tr><td width='20%' bgcolor='66CC99'><b>".$headers[$f_name]."</b></td><td bgcolor='CCFFCC'>$r</td></tr>";
+}
+print"</table><br>";
+$rec++;
+}
+}
+footer();
+?>

@@ -1,0 +1,551 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>CrisprEd</title>
+<meta name="keywords" content="CRISPR, editing, RNA, gRNA, cas9" />
+<meta name="description" content="Crispr editing Crisprdbbase" />
+<link href="style.css" rel="stylesheet" type="text/css" />
+
+<script language="javascript" type="text/javascript">
+function clearText(field)
+{
+    if (field.defaultValue == field.value) field.value = '';
+    else if (field.value == '') field.value = field.defaultValue;
+}
+</script>
+
+<link rel="stylesheet" href="css/nivo-slider.css" type="text/css" media="screen" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script src="script/jquery.nivo.slider.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+$(window).load(function() {
+        $('#slider').nivoSlider({
+                effect:'random',
+                slices:15,
+                animSpeed:500,
+                pauseTime:2000,
+                startSlide:0, // Set starting Slide (0 index)
+                directionNav: false, // Next and Prev
+                directionNavHide:false, // Only show on hover
+                controlNav:false, // 1,2,3...
+                controlNavThumbs:false, //Use thumbnails for Control Nav
+                pauseOnHover:true, //Stop animation while hovering
+                manualAdvance:false, //Force manual transitions
+                captionOpacity:0.8, //Universal caption opacity
+                beforeChange: function(){},
+                afterChange: function(){},
+                slideshowEnd: function(){} //Triggers after all slides have been shown
+        });
+});
+</script>
+
+</head>
+<body>
+
+
+<div id="header_wrapper">	
+    <div id="header">
+        <div id="site_title">
+            <h1><a href="" target="_parent">CrisprEdb</a></h1> </div>
+<div id="menu">
+            <ul>
+                <li><a href="index.php" class="current"><span class="home"></span>Home</a></li>
+                <li><a href="browse.php"><span class="portfolio"></span>Browse</a></li>
+                <li><a href="search.php"><span class="projects"></span>Search</a></li>
+		<li><a href="advance.php"><span class="projects"></span>Advanced Search</a></li>
+                <li><a href="tools.php"><span class="gallery"></span>Tools</a></li>
+                <li><a href="#"><span class="gallery"></span>Contact</a></li>
+            </ul>
+        </div>
+</div> 
+</div>
+<div id="wrapper">
+<div id="middle">
+<?php
+ini_set( "display_errors", 0);
+#require_once("head.php");
+#include("sort.php");
+include"connection.php";
+?>
+<style >
+div.pagination {
+padding: 3px;
+margin: 3px;
+ }
+div.pagination a {
+padding: 2px 5px 2px 5px;
+margin: 2px;
+#border: 1px solid #A4600C;                                                                                                                         
+border: 2px solid green;
+    text-decoration: none; /* no underline */
+color: blue;                                                                                                                                       
+}
+div.pagination a:hover, div.pagination a:active {
+border: 1px solid red;                                                                                                                         
+    color: blue;                                                                                                                                    
+}
+div.pagination span.current {
+padding: 2px 5px 2px 5px;
+margin: 2px;
+border: 1px solid #115176;                                                                                                                         
+    font-weight: bold;
+#  background-color: #66cc99; 
+  background-color: #348017;                                                                                                                         
+  color: #FFF;                                                                                                                                       
+}
+div.pagination span.disabled {
+padding: 2px 5px 2px 5px;
+margin: 2px;
+border: 1px solid #EEE;                                                                                                                            
+    color: #DDD;                                                                                                                                       
+}
+</style>
+
+
+<?php
+if(!isset($_GET['details'])){		
+  $adjacents = 5;
+  $select_by=$_GET['by'];
+  #echo $select_by;
+  $select_type=isset($_GET['TYPE'])?$_GET['TYPE']:"";
+  #echo $select_type;
+  $query = "SELECT COUNT( * ) AS num FROM `Crisprdb` where `$select_type` like '".$select_by."'";
+  #$query = "SELECT COUNT( * ) FROM `Crisprdb` where `$select_type` like '".$select_by."'";
+  #echo $query;
+  $total_pages = mysql_fetch_array(mysql_query($query));
+  $total_pages = $total_pages[num];
+  #echo $total_pages;
+  $targetpage = "browse.php"; 	//your file name  (the name of this file)
+  $limit = 25; 								//how many items to show per page
+  $page = $_GET['page'];
+ # echo $page;
+  if($page){ 
+    $start = ($page - 1) * $limit;} 			//first item to display on this page
+  else
+    $start = 0;								//if no page var is given, set start to 0
+  if(!isset($_GET['how'])){
+    $sql = "SELECT  *  FROM `Crisprdb` where `$select_type` like '".$select_by."' LIMIT $start, $limit";}
+  if(isset($_GET['how'])){
+		  if($_GET['how']=='up'){$sort='ASC';}else{$sort='DESC';}		
+		  $sql = "SELECT  *  FROM `Crisprdb` where `$select_type` like '".$select_by."' order by `Crisprdb`.`".$_GET['sort']."`  ".$sort." LIMIT $start, $limit";
+#		  echo $sql;
+  }
+  $result = mysql_query($sql);
+  if ($page == 0) $page = 1;					//if no page var is given, default to 1.
+  $prev = $page - 1;							//previous page is page - 1
+  $next = $page + 1;							//next page is page + 1
+  $lastpage = ceil($total_pages/$limit);		//lastpage is = total pages / items per page, rounded up.
+  $lpm1 = $lastpage - 1;						//last page minus 1
+  $pagination = "";
+  if($lastpage > 1)
+    {	
+	$pagination .= "<div class=\"pagination\">";
+	if ($page > 1) 
+	  $pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$prev\">« previous</a>";
+	else
+	  $pagination.= "<span class=\"disabled\">« previous</span>";	
+	if ($lastpage < 7 + ($adjacents * 2))	//not enough pages to bother breaking it up
+	  {	
+	    for ($counter = 1; $counter <= $lastpage; $counter++)
+	      {
+		if ($counter == $page)
+		  $pagination.= "<span class=\"current\">$counter</span>";
+		      else
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$counter\">$counter</a>";				
+		    }
+	  }
+	elseif($lastpage > 5 + ($adjacents * 2))	//enough pages to hide some
+	  {
+		    if($page < 1 + ($adjacents * 2))		
+		      {
+			for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter++)
+			  {
+			    if ($counter == $page)
+			      $pagination.= "<span class=\"current\">$counter</span>";
+			    else
+			      $pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$counter\">$counter</a>";			
+			  }
+			$pagination.= "...";
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$lpm1\">$lpm1</a>";
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$lastpage\">$lastpage</a>";		
+		      }
+		    elseif($lastpage - ($adjacents * 2) > $page && $page > ($adjacents * 2))
+		      {
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=1\">1</a>";
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=2\">2</a>";
+			$pagination.= "...";
+			for ($counter = $page - $adjacents; $counter <= $page + $adjacents; $counter++)
+			  {
+			    if ($counter == $page)
+			      $pagination.= "<span class=\"current\">$counter</span>";
+		      else
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$counter\">$counter</a>";				
+			  }
+			$pagination.= "...";
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$lpm1\">$lpm1</a>";
+		  $pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$lastpage\">$lastpage</a>";		
+		      }
+		    else
+		      {
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=1\">1</a>";
+			$pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=2\">2</a>";
+			$pagination.= "";
+			for ($counter = $lastpage - (2 + ($adjacents * 2)); $counter <= $lastpage; $counter++)
+			  {
+			    if ($counter == $page)
+			      $pagination.= "<span class=\"current\">$counter</span>";
+			    else
+			      $pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$counter\&by=$select_by&TYPE=$select_type\">$counter</a>";					
+			  }
+		      }
+		  }
+	if ($page < $counter - 1) 
+	  $pagination.= "<a href=\"$targetpage?by=$select_by&TYPE=$select_type&page=$next\">next »</a>";
+	else
+	  $pagination.= "<span class=\"disabled\">next »</span>";
+		$pagination.= "</div>\n";		
+    }
+}
+?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+           <?php  
+echo '
+<script langauge="JavaScript" type="text/javascript">
+function doMenu(item) {
+ obj=document.getElementById(item);
+ col=document.getElementById("x" + item);
+ if (obj.style.display=="none") {
+  obj.style.display="block";
+  col.innerHTML="[-]";
+ }
+ else {
+  obj.style.display="none";
+  col.innerHTML="[+]";
+ }
+}
+</script>';
+
+
+
+
+if(!isset($_GET['details'])){	
+#	echo "<h2 class=\"title\"><font size=\"3.5\"><b>Browse By</b></font> </h2>";
+#	if(!isset($_GET['id']))  {  
+	  #echo "<ul>";#<li><a href=\"?browse=id\">VsiRNAid</a></li><br/>";
+#		if($_GET['browse']=='id'){echo "<ul>";$qu=mysql_query("select * from Crisprdb");
+#			while ($q1=mysql_fetch_row($qu)){
+#				echo "<br/><li><a href=\"?by=".$q1[0]."&TYPE=siRNA ID\">".$q1[0]."</a></li>";
+#			}
+#			echo "</ul><br/>";}
+
+#echo "<br><br><a href=\"?browse=aut\"><b>Organism</b></a>";echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";	
+echo "<br/><br><li><a href=\"?browse=org\" class=\"more float_l\"><b>Organism</b></a></li>";	
+		if($_GET['browse']=='org'){
+			echo "<br/>";$qu=mysql_query("SELECT distinct(`ORGANISM`) FROM `Crisprdb` WHERE  `ORGANISM` NOT like 'XXX' order by `ORGANISM` asc");
+			echo "<br>";
+			while ($q1=mysql_fetch_row($qu)){
+				echo "<div    style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey;\" width=\"100\"><a href=\"browse.php?by=".$q1[0]."&TYPE=ORGANISM\">".$q1[0]."  </a></div>";
+			}
+			#echo "</ol>";
+		}
+
+
+echo "<br/><br><li><a href=\"?browse=gene\" class=\"more float_l\"><b>Gene/Locus</b></a></li>";
+		if($_GET['browse']=='gene'){
+			echo "<br/>";$qu=mysql_query("SELECT distinct(`GENE/LOCUS`) FROM `Crisprdb` WHERE  `GENE/LOCUS` NOT like 'XXX' order by `GENE/LOCUS` asc");
+			echo "<br>";
+			while ($q1=mysql_fetch_row($qu)){
+			$i++;
+			#echo "$i";
+			a:
+			if($i<=10)
+			{	
+				#echo "<ul>jbc</ul><ul>efg</ul>";
+			echo "<div    style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \" width=\"100\"><a href=\"browse.php?by=".$q1[0]."&TYPE=GENE/LOCUS\">".$q1[0]."  </a></div>";
+			}
+			else
+			{$i=1;
+			echo "<br><br>";
+			goto a;	}			
+			
+		}	
+			#echo "</ol>";
+		}	
+
+
+
+
+
+
+		 	echo"<br/><br><li><a href=\"?browse=gRNA\"class=\"more float_l\"><b>Target/gRNA</b></a></li>";
+			if($_GET['browse']=='gRNA'){echo "<br/>";
+				$qu=mysql_query("SELECT distinct(`TARGET`) FROM `Crisprdb` WHERE `TARGET` is not null  AND `TARGET` not like 'NA' order by `TARGET` ASC LIMIT 0, 100 ");
+			echo "<br>";
+				while ($q1=mysql_fetch_row($qu)){
+					$i++;
+					b:
+					if ($i==1)
+					{$sq1="select `ID` from `Crisprdb` where `SOURCE`  like '".$q1[0]."'";
+					$number_r=mysql_query($sq1);
+					$tot_f=mysql_num_rows($number_r);
+					echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey;  \" width=\"100\"><a href=\"browse.php?by=".$q1[0]."&TYPE=TARGET\">".$q1[0]."  </a></div>";}
+			else
+				{ $i=1; echo "<br><br>"; goto b;		}
+
+#<font size=\"2\" color=\"#800000\">(".$tot_f.")</font></li><br/>";
+				}
+			#echo "</ol>";
+		}
+		#echo "<br/><br><li><a href=\"?browse=pam\" class=\"more float_l\"><b>PAM</b></a></li>";
+		if($_GET['browse']=='pam'){
+                       # echo "<br/><a href=\"http://www.ictvdb.org/index.htm\"><img src=\"images_n/ictv.jpg\" width=\"80\" height=\"15\"></a> Link to ICTV Crisprdbbase The Universal Virus Crisprdbbase of theInternational Committee on Taxonomy                 of Viruses";
+			echo "<br/>";
+			$qu=mysql_query("SELECT distinct(`PAM`) FROM `Crisprdb` WHERE `PAM` is not null AND `PAM` not like '-' order by `PAM`ASC LIMIT 0, 100 ");	echo "<br>";
+			while ($q1=mysql_fetch_row($qu)){
+				$i++;
+				c:
+				if ($i<=10)
+				{$sq1="select `ID` from `Crisprdb` where `PAM`  like '".$q1[0]."'";
+				$number_r=mysql_query($sq1);
+				$tot_f=mysql_num_rows($number_r);
+#				echo "<br/><li><a href=\"browse.php?by=".$q1[0]."&TYPE=name of virus\">".$q1[0]."</a><font size=\"2\" color=\"#800000\">(".$tot_f.")</font> </li>";
+                                echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \"><a href=\"browse.php?by=".$q1[0]."&TYPE=PAM\">".$q1[0]."</a></div>";}
+#<font size=\"2\" color=\"#800000\">(" .$tot_f.")</font>";
+				else
+				{ $i=1; echo "<br>"; goto c;		}
+
+
+
+/*
+if($q1[0]=='Hepatitis B Virus [HBV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1703\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";
+}
+				if($q1[0]=='Hepatitis C Virus [HCV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1318\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Hepatitis A Virus [HAV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2115\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Ebolavirus [EBOV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1294\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='West Nile Virus [WNV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1308\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/></li>";} 
+				if($q1[0]=='Influenza A Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1932\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Influenza B Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1935\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";
+}
+				if($q1[0]=='Japanese Encephalitis Virus [JE]'){echo "&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1307\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";} 
+				if($q1[0]=='Dengue Virus [DENV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1311\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='SARS Coronavirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1100\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";} 
+				if($q1[0]=='Measles'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1979\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";} 
+				if($q1[0]=='HPV'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1955\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='entereovirus'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2107\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='HSV'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1733\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='coxsackievirus'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2107\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='lassa'){echo "<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=259\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Epstein-Barr Virus [EBV]'){echo "&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1753\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]==''){echo "<a href=\"\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Enterovirus [EV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2107\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Hendra Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2010\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				If($q1[0]=='Sendai Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1975\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Henipavirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2009\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Hepatitis Delta Virus [HDV]'){echo "&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1277\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+
+				if($q1[0]=='Herpes Simplex Virus [HSV]'){echo "&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1733\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Human Coxsackievirus [CV]'){echo "&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2107\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Human Papillomavirus [HPV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1955\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Human Respiratory Syncytial Virus [HRSV]'){echo "&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2014\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='John Cunningham Virus [JCV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2151\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                                if($q1[0]=='Human Metapneumovirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2015\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Human Rhinovirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2113\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='La Crosse Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=619\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Lassa Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=259\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+				if($q1[0]=='Measles Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1979\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+		if($q1[0]=='Vaccinia '){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2394\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+		if($q1[0]=='Reovirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2429\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+
+		if($q1[0]=='Marburg Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1292\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+		if($q1[0]=='St. Louis Encephalitis [SLE]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1303\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+		if($q1[0]=='Chikungunya Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=3604\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='BK polyomavirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2151\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='Hepatitis E Virus [HEV]'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1729\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+if($q1[0]=='Encephalomyocarditis virus'){echo "&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2117\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+if($q1[0]=='Hazara nairovirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=831\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+if($q1[0]=='Rabies'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=3313\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='Rotavirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=3073\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='BK Polyomavirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2151\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='Encephalomyocarditis Virus'){echo "&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2117\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='Hazara Nairovirus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=831\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+			
+                if($q1[0]=='Junin Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=279\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+                if($q1[0]=='Lymphocytic Choriomeningitis Virus'){echo "&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=263\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}                        
+                if($q1[0]=='Polio Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2108\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+ if($q1[0]=='Semliki Forest Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=3777\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+ if($q1[0]=='Vaccinia'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=2394\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+ if($q1[0]=='Yellow Fever Virus'){echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href=\"http://ictvdb.cumc.columbia.edu/servlet/Virus?id=1300\"><img src=\"images_n/ictv.jpg\" width=\"70\" height=\"16\"></a><br/>";}
+
+
+*/
+
+}}
+
+
+			#echo "</ol>"; 
+		}
+		echo "<br/><br><li><a href=\"?browse=mod\" class=\"more float_l\"><b>Modifications</b></a></li>";
+		if($_GET['browse']=='mod'){
+			echo "<br/>";$qu=mysql_query("SELECT distinct(`MODIFICATION`) FROM `Crisprdb` WHERE  `MODIFICATION` NOT like 'NA' order by `MODIFICATION` asc"); echo "<br>";
+			while ($q1=mysql_fetch_row($qu)){
+				$i++;
+				d:
+				if ($i<=10)
+				{echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \"><a href=\"browse.php?by=".$q1[0]."&TYPE=MODIFICATION\">".$q1[0]."</a></div>";}
+				else
+				{ $i=1; echo "<br>"; goto d;		}
+			}
+			#echo "</ol>";
+		}
+		echo"<br/><br><li><a href=\"?browse=cell\" class=\"more float_l\"><b>Cell line</b></a></li>";
+		if($_GET['browse']=='cell'){
+			echo "<br/>";
+			$qu=mysql_query("SELECT distinct(`CELL LINE`) FROM `Crisprdb`  WHERE `CELL LINE` NOT like 'NA' order by `CELL LINE` asc ");
+                        $qu_pid=mysql_query("SELECT distinct(`CELL LINE`) FROM `Crisprdb` WHERE `CELL LINE`!='NULL'");
+			$tot_pid=mysql_num_rows($qu_pid);
+			echo "<br>";
+			$g=0;
+			while ($q1=mysql_fetch_row($qu)){
+			  $g++;
+				$i++;
+				e:
+				if ($i<=10)
+				{echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \"><a href=\"browse.php?by=".$q1[0]."&TYPE=CELL LINE\">".$q1[0]."</a></div>";}
+				else
+				{ $i=1; echo "<br>"; goto e;		}
+			}
+		# echo "</ol>";
+		}
+
+
+/**/
+
+
+	
+		
+
+
+echo "<br/><br><li><a href=\"?browse=assay\" class=\"more float_l\"><b>Assay</b></a></li>";
+                if($_GET['browse']=='assay'){$qu=mysql_query("SELECT distinct(`METHOD`) FROM `Crisprdb`  WHERE `METHOD` NOT like 'NA' order by `METHOD` asc "); echo "<br/><br>";
+                        while ($q1=mysql_fetch_row($qu)){
+				$i++;
+				f:
+				if ($i<=5)
+                               { echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \"><a href=\"browse.php?by=".$q1[0]."&TYPE=METHOD\">".$q1[0]."</a></div>";}
+				else
+				{ $i=1; echo "<br>"; goto f;		}
+                        }
+                       # echo "</ul><br/></ul>"; 
+
+}
+
+		echo "<br/><br><li><a href=\"?browse=eff\" class=\"more float_l\"><b>CRISPR efficiency</b></a></li></ul></ul>";
+		if($_GET['browse']=='eff'){$qu=mysql_query("SELECT distinct(`CRISPR-EFFICIENCY`) FROM `Crisprdb`  WHERE `CRISPR-EFFICIENCY` NOT like 'NA' order by `CRISPR-EFFICIENCY` asc "); echo "<br/><br>";
+                        while ($q1=mysql_fetch_row($qu)){
+				$i++;
+				g:
+				if ($i<=10)
+                               { echo "<div style=\"display:inline; padding:3px 20px; margin:0 5px; width:100px; border:2px solid grey; \"><a href=\"browse.php?by=".$q1[0]."&TYPE=CRISPR-EFFICIENCY\">".$q1[0]."</a></div>";}
+				else
+				{ $i=1; echo "<br><br>"; goto g;		}
+                        }
+                       # echo "</ul><br/></ul>"; 
+
+}
+##############################}
+if(isset($_GET['by']) || isset($_GET['page'])){
+if($_GET['how']=='up'){$how='down';}else{$how='up';}
+
+
+$pubmed_res=file("pubmed.txt");
+
+	echo "<br><br><br><font size='4px' font color=\"white\">Total number of Results for</font> <font size='3px' color='RED' font color=\"white\"> $select_by </font><font size='4px' font color=\"white\">are</font> <font size='3px' color='RED' font color=\"white\"> $total_pages</font><br/>";
+	$end=$start+$limit;
+	echo "<font size='3px' font color=\"white\">Results from </font><font size='3px' color='RED'>$start - $end </font> <br/>";
+	$no_res = mysql_num_rows($result);
+	#echo $no_res;
+ 	 if($no_res == 0){
+   	   	print"<br><br><br><center><font color='brown' size='4'><b>No Record Found in our database</b></font>";
+    	  	print"<br><input type='button' onClick='history.go(-1)' value='Go Back'></center>";
+ 	 }
+	else{
+	  echo $pagination;
+
+   
+
+
+
+	   echo "<table align=\"center\" cellspacing=\"10\" class =\"tab\" border=\"1\" width=\"100%\"   height='1%' name=\"tab\" STYLE=\"border-spacing: 0px;border-style:wave  ;   border-color:black; border-collapse: collapse;font-size: 13px; background-color: white;\">";
+
+  #echo "<tr bgcolor=\"#cdcdcd\"><th>Organism</th><th>Gene/Locus</th><th>Target</th><th>PAM</th><th>Modifications</th><th>Cell line</th><th>Assay</th><th>CRISPR efficiency</th></tr>";
+
+	echo "<tr bgcolor=\"#cdcdcd\"><th>CrisprID</th><th>Organism</th><th>Gene/Locus</th><th>Target/Mutant</th><th>Modifications</th><th>Cell line</th><th>Assay</th><th>CRISPR efficiency</th><th>PMID</th></tr>";
+
+	 # echo "<tr bgcolor=\"#FF9900\"><th>AHPid</th><th>Sequence</th><th width=60px><a href=\"browse.php?by=".$_GET['by']."&TYPE=".$_GET['TYPE']."&sort=name of virus&how=".$how."\"><img src=\"images_n/ud.jpeg\" height=\"5\"><font color=\"black\">Source</font></a></th><th width=\"60px\"><a href=\"browse.php?by=".$_GET['by']."&TYPE=".$_GET['TYPE']."&sort=Target Gene&how=".$how."\"><font color=\"black\"><img src=\"images_n/ud.jpeg\" height=\"5\">Cell line</font></a></th><th width=\"60px\"><a href=\"browse.php?by=".$_GET['by']."&TYPE=".$_GET['TYPE']."&sort=Cell Line&how=".$how."\"><font color=\"black\"><img src=\"images_n/ud.jpeg\" height=\"15\">Efficacy</font></a>
+
+
+
+#</th><th width=\"60px\"><a href=\"browse.php?by=".$_GET['by']."&TYPE=".$_GET['TYPE']."&sort=object&how=".$how."\"><font color=\"black\"><img src=\"images_n/ud.jpeg\" height=\"5\">Test Object</font></a></th><th><a href=\"browse.php?by=".$_GET['by']."&TYPE=".$_GET['TYPE']."&sort=object&how=".$how."\"><font color=\"black\"><img src=\"images_n/ud.jpeg\" height=\"5\">Efficacy</font></a></th><th> PMID</th></tr></font>";
+include "rows1.php";
+
+	
+	 print"</table><br>";}
+	 #$pagination="............".$pagination;
+
+	 echo $pagination ;
+#echo '<br/><img src="images_n/green1.jpeg">: siRNA specific for both strands<br/><img src="images_n/blue1.jpeg">: siRNA specific for only one strands<br/><img src="images_n/red1.jpeg">: siRNA Not specific <br/><a href><b>SL</b><a>: siRNA seedlocator algorithm<br/>';
+}
+#$pagination="............".$pagination;
+#echo $pagination ;
+
+
+
+#include "foot.php";
+?>
+<div id="middle" style="height: 200px;">
+    
+    	<div class="col_w540 float_l v_divider">
+</div>
+<div class="cleaner h30"></div>
+            
+            <div class="cleaner"></div>
+</div>
+
+<div id="content">
+    
+    	<div class="col_w440 float_l">
+			</div>
+            
+			<div class="cleaner"></div>  
+
+      </div>
+        <div class="cleaner"></div>   
+</div>
+
+</div>
+<div id="footer_wrapper">
+     <div id="footer">
+
+        Copyright © 2014 <a hrf="http://www.imtech.res.in">Institute of Microbial Technology</a> |
+        <a href="" target="_parent">CSIR</a> by <a href="" target="_parent">Team</a>
+
+    </div> <!-- end of footer -->
+
+
+</body>
+</html>

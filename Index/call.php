@@ -1,0 +1,10 @@
+<?php 
+
+$blastall='/usr/bin/blastall';
+$db_path='/var/www/vv/db';
+$genome="genome";
+$prog=".";
+$formatdb="/usr/bin/formatdb";
+$tmp="tmp";
+$db="piperdb";
+?>
