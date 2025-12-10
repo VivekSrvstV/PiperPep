@@ -1,4 +1,4 @@
-!piper.png
+
 
 Welcome to PiperPep
 Black pepper (Piper nigrum L) belongs to Piperaceae family. 
